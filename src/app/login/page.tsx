@@ -39,7 +39,23 @@ export default function LoginPage() {
     const role = data.user.user_metadata?.role;
 
     if (role === "professional") {
-      router.push("/professional/setup");
+      const { data: profile, error: profileError } = await supabase
+        .from("professional_profiles")
+        .select("user_id")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        setMessage(`No se pudo verificar tu perfil profesional: ${profileError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      if (profile) {
+        router.push("/professional/dashboard");
+      } else {
+        router.push("/professional/setup");
+      }
     } else {
       router.push("/");
     }
