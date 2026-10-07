@@ -1,10 +1,12 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ProfessionalSetupPage() {
   const supabase = createClient();
+  const router = useRouter();
 
   const [businessName, setBusinessName] = useState("");
   const [professionalName, setProfessionalName] = useState("");
@@ -19,6 +21,35 @@ export default function ProfessionalSetupPage() {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    async function checkExistingProfile() {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) return;
+
+      const { data: profile, error: profileError } = await supabase
+        .from("professional_profiles")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        setMessage(`No se pudo verificar tu perfil: ${profileError.message}`);
+        return;
+      }
+
+      if (profile) {
+        router.replace("/professional/dashboard");
+      }
+    }
+
+    checkExistingProfile();
+  }, [router]);
+
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
